@@ -5,12 +5,28 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Event;
+use DB;
 class EventController extends Controller
 {
     public function index(Request $request)
     {
 
-        $events = Event::simplePaginate(15);
+        $events = Event::orderBy('id');
+
+        $term = $request->get('term');
+
+        if(!empty($term))
+        {
+            $events->where(function($query) use($term){
+
+                $query->where('title', 'like', '%' . $term .'%');
+                    $query->orWhere('venue', 'like', '%' . $term .'%');
+
+            });
+        }
+        
+        
+        $events = $events->simplePaginate(15);
         return view('event.index', compact('events'));
     }
 
@@ -26,14 +42,19 @@ class EventController extends Controller
             'date' => 'required',
             'price' => 'required',
         ]);
+        try {
+            $event = new Event();
+            $event->title = $request->title;
+            $event->date = $request->date;
+            $event->venue = $request->venue;
+            $event->price = $request->price;
+            $event->save();
+        } catch (\Exception $e) {
+                // An error occurred, rollback the transaction
+                DB::rollback();
 
-        $event = new Event();
-        $event->title = $request->title;
-        $event->date = $request->date;
-        $event->venue = $request->venue;
-        $event->price = $request->price;
-        $event->save();
-
+                return redirect()->back()->with('error', 'Failed to save data. Please try again.');
+            }
 
         return redirect()->route('event.index');
     }
@@ -51,13 +72,19 @@ class EventController extends Controller
             'date' => 'required',
             'price' => 'required',
         ]);
-
+try {
         $event = Event::find($id);
         $event->title = $request->title;
         $event->date = $request->date;
         $event->venue = $request->venue;
         $event->price = $request->price;
         $event->save();
+} catch (\Exception $e) {
+                // An error occurred, rollback the transaction
+                DB::rollback();
+
+                return redirect()->back()->with('error', 'Failed to save data. Please try again.');
+            }
 
 
         return redirect()->route('event.index');

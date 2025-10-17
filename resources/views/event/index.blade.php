@@ -16,7 +16,7 @@
         <h1>Events</h1> 
 
         <form action="" method="GET">
-            <input type="text" name="serach" >
+            <input type="text" name="term" >
             <button>SEARCH</button>
         </form>
        <a href="{{route('event.create')}}" class="btn btn-success">ADD NEW</a>
